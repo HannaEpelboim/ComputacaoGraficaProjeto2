@@ -75,6 +75,12 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
     neutro = TextureSet([decal_neutro, normal_neutro, tex_sampler])
     shader.add_texture_set(neutro)
 
+    # esferas: mesmo decal neutro, mas com o mapa de normais da bola de golfe
+    # (rgba8unorm, pois guarda vetores e nao cor)
+    normal_golfe = Texture(device, "normal_texture", "../images/golfball.png", format="rgba8unorm")
+    golfe = TextureSet([decal_neutro, normal_golfe, tex_sampler])
+    shader.add_texture_set(golfe)
+
 
     cube = Cube(device)
     sphere = Sphere(device)
@@ -130,8 +136,8 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
         Node(None, trf_leg_bl, [wood, neutro], [cube]),
         Node(None, trf_leg_br, [wood, neutro], [cube]),
         Node(None, trf_box, [orange, neutro], [cube]),
-        Node(None, trf_sphere_green, [green, neutro], [sphere]),
-        Node(None, trf_sphere_red, [red, neutro], [sphere]),
+        Node(None, trf_sphere_green, [green, golfe], [sphere]),
+        Node(None, trf_sphere_red, [red, golfe], [sphere]),
     ])
     scene = Scene(root)
 
