@@ -16,6 +16,9 @@ from scene import *
 from renderer import *
 from cube import *
 from sphere import *
+from texture import *
+from sampler import *
+from textureset import *
 
 canvas: RenderCanvas
 device: wgpu.GPUDevice
@@ -35,6 +38,10 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
     camera.set_center(0.0, 1.0, 0.0)  
     arcball = camera.create_arcball()
     arcball.attach(canvas)
+
+    projector = Camera3D(0.8, 4.6, 3.2)
+    projector.set_center(0.0, 1.8, 0.2)
+    projector.set_angle(36.0)
 
 
     light = PointLight(0.8, 4.6, 3.2, space="world")
@@ -56,6 +63,15 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
     shader.add_material(green)
     shader.add_material(red)
 
+    translate = gm.translate(gm.mat4(1.0), gm.vec3(0.5, 0.5, 0.0))
+    scale = gm.scale(gm.mat4(1.0), gm.vec3(0.5, -0.5, 1.0))
+    shader.set_value("projector_matrix", translate @ scale @ projector.get_proj_matrix((1, 1)) @ projector.get_view_matrix())
+
+
+    slide = Texture(device, "slide_texture", "../images/smile_face.jpg")
+    slide_sampler = Sampler(device, "slide_sampler", address_mode_u="clamp-to-edge", address_mode_v="clamp-to-edge")
+    slides = TextureSet([slide, slide_sampler])
+    shader.add_texture_set(slides)
 
     cube = Cube(device)
     sphere = Sphere(device)
@@ -105,14 +121,14 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
     trf_sphere_red = sphere_transform(0.9, -0.3, 0.58, table_surface_y)
 
     root = Node(pipeline, nodes=[
-        Node(None, trf_top, [wood], [cube]),
-        Node(None, trf_leg_fl, [wood], [cube]),
-        Node(None, trf_leg_fr, [wood], [cube]),
-        Node(None, trf_leg_bl, [wood], [cube]),
-        Node(None, trf_leg_br, [wood], [cube]),
-        Node(None, trf_box, [orange], [cube]),
-        Node(None, trf_sphere_green, [green], [sphere]),
-        Node(None, trf_sphere_red, [red], [sphere]),
+        Node(None, trf_top, [wood, slides], [cube]),
+        Node(None, trf_leg_fl, [wood, slides], [cube]),
+        Node(None, trf_leg_fr, [wood, slides], [cube]),
+        Node(None, trf_leg_bl, [wood, slides], [cube]),
+        Node(None, trf_leg_br, [wood, slides], [cube]),
+        Node(None, trf_box, [orange, slides], [cube]),
+        Node(None, trf_sphere_green, [green, slides], [sphere]),
+        Node(None, trf_sphere_red, [red, slides], [sphere]),
     ])
     scene = Scene(root)
 

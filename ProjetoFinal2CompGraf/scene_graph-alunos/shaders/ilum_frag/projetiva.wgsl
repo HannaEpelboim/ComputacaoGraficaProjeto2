@@ -11,6 +11,7 @@ struct Global {
   light_specular: vec3<f32>,
   light_position: vec4<f32>,
   camera_position: vec4<f32>,  // posição da câmera no espaço de iluminação
+  projector_matrix: mat4x4<f32>,
 }
 @group(0) @binding(0) var<uniform> global: Global;
 
@@ -23,10 +24,14 @@ struct Material {
 }
 @group(2) @binding(0) var<uniform> material: Material;
 
+@group(3) @binding(0) var slide_texture: texture_2d<f32>;
+@group(3) @binding(1) var slide_sampler: sampler;
+
 struct VertexOutput {
   @builtin(position) clip_position: vec4<f32>,
   @location(0) normal: vec3<f32>,
-  @location(1) position: vec3<f32>,   
+  @location(1) position: vec3<f32>,
+  @location(2) projcoord: vec4<f32>,
 }
 
 @vertex
@@ -35,6 +40,7 @@ fn vs_main (@builtin(instance_index) instance_index: u32, @location(0) coord: ve
   var out: VertexOutput;
   let p = m.vertex * vec4<f32>(coord, 1.0);
   out.position = p.xyz;
+  out.projcoord = global.projector_matrix * p;
   out.normal = (m.normal * vec4<f32>(normal, 0.0)).xyz;
   out.clip_position = global.projection * p;
   return out;
@@ -46,13 +52,15 @@ fn fs_main (in: VertexOutput) -> @location(0) vec4<f32> {
   let light = normalize(global.light_position.xyz - in.position);
   let view = normalize(global.camera_position.xyz - in.position);
 
+  let proj = in.projcoord.xyz / in.projcoord.w;
+  let lcolor = textureSample(slide_texture, slide_sampler, proj.xy).rgb;
   
   var color = material.base_color * global.light_ambient;
   let ndotl = dot(normal, light);
   if (ndotl > 0.0) {
-    color += material.base_color * global.light_diffuse * ndotl;
+    color += material.base_color * global.light_diffuse * ndotl * lcolor;
     let refl = normalize(reflect(-light, normal));
-    color += material.specular_color * global.light_specular * pow(max(0.0, dot(refl, view)), material.shininess);
+    color += material.specular_color * global.light_specular * pow(max(0.0, dot(refl, view)), material.shininess) * lcolor;
   }
   return vec4<f32>(color, 1.0);
 }
