@@ -49,6 +49,7 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
     orange = PhongMaterial(0.95, 0.70, 0.15)
     green = PhongMaterial(0.15, 0.75, 0.40)
     red = PhongMaterial(0.90, 0.10, 0.20)
+    white = PhongMaterial(1.0, 1.0, 1.0)
     shader = Shader(device, "../shaders/ilum_frag/spot_rugosidade.wgsl", light=light, space="world")
     # mesma ordem de slots do Cube e da Sphere: coord, normal, tangent, texcoord
     shader.set_vertex_buffers([
@@ -66,6 +67,7 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
     shader.add_material(orange)
     shader.add_material(green)
     shader.add_material(red)
+    shader.add_material(white)
 
     # texturas neutras: decal branco nao altera a cor do material e o mapa
     # (0.5,0.5,1.0) decodifica para n = (0,0,1), ou seja, superficie lisa
@@ -80,6 +82,12 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
     normal_golfe = Texture(device, "normal_texture", "../images/golfball.png", format="rgba8unorm")
     golfe = TextureSet([decal_neutro, normal_golfe, tex_sampler])
     shader.add_texture_set(golfe)
+    decal_terra = Texture(device, "decal_texture", "../images/earth.jpg")
+    decal_relogio = Texture(device, "decal_texture", "../images/stopwatch.jpg")
+    terra = TextureSet([decal_terra, normal_golfe, tex_sampler])
+    relogio = TextureSet([decal_relogio, normal_neutro, tex_sampler])
+    shader.add_texture_set(terra)
+    shader.add_texture_set(relogio)
 
 
     cube = Cube(device)
@@ -135,8 +143,8 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
         Node(None, trf_leg_fr, [wood, neutro], [cube]),
         Node(None, trf_leg_bl, [wood, neutro], [cube]),
         Node(None, trf_leg_br, [wood, neutro], [cube]),
-        Node(None, trf_box, [orange, neutro], [cube]),
-        Node(None, trf_sphere_green, [green, golfe], [sphere]),
+        Node(None, trf_box, [orange, relogio], [cube]),
+        Node(None, trf_sphere_green, [white, terra], [sphere]),
         Node(None, trf_sphere_red, [red, golfe], [sphere]),
     ])
     scene = Scene(root)

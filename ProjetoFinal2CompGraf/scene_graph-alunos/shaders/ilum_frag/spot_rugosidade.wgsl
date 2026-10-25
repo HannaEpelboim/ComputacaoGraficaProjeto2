@@ -94,7 +94,7 @@ fn fs_main (in: VertexOutput) -> @location(0) vec4<f32> {
   let base = material.base_color * decal;
 
   var color = base * global.light_ambient;
-  let ndotl = dot(normal, light);
+  let ndotl = select(0.0, dot(normal, light), light.z > 0.0);
   if (ndotl > 0.0) {
     color += base * global.light_diffuse * ndotl;
     let refl = normalize(reflect(-light, normal));
