@@ -47,7 +47,7 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
 
     light = PointLight(0.8, 4.6, 3.2, space="world")
 
-    wood = PhongMaterial(0.60, 0.38, 0.18)
+    wood = PhongMaterial(0.80, 0.62, 0.42)    
     orange = PhongMaterial(0.95, 0.70, 0.15)
     green = PhongMaterial(0.15, 0.75, 0.40)
     red = PhongMaterial(0.90, 0.10, 0.20)
