@@ -19,6 +19,7 @@ from sphere import *
 from texture import *
 from sampler import *
 from textureset import *
+import graphics_math as gm
 
 canvas: RenderCanvas
 device: wgpu.GPUDevice
@@ -50,18 +51,24 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
     orange = PhongMaterial(0.95, 0.70, 0.15)
     green = PhongMaterial(0.15, 0.75, 0.40)
     red = PhongMaterial(0.90, 0.10, 0.20)
+    white = PhongMaterial(1.0, 1.0, 1.0)
     shader = Shader(device, "../shaders/ilum_frag/projetiva.wgsl", light=light, space="world")
     shader.set_vertex_buffers([
         {"array_stride": 3 * 4, "step_mode": "vertex",
          "attributes": [{"format": "float32x3", "offset": 0, "var_name": "coord"}]},
         {"array_stride": 3 * 4, "step_mode": "vertex",
          "attributes": [{"format": "float32x3", "offset": 0, "var_name": "normal"}]},
+        {"array_stride": 3 * 4, "step_mode": "vertex",
+         "attributes": [{"format": "float32x3", "offset": 0, "var_name": "tangent"}]},
+        {"array_stride": 2 * 4, "step_mode": "vertex",
+         "attributes": [{"format": "float32x2", "offset": 0, "var_name": "texcoord"}]},
     ])
     pipeline = Pipeline(shader, target_format, primitive={"cull_mode": "back"})
     shader.add_material(wood)
     shader.add_material(orange)
     shader.add_material(green)
     shader.add_material(red)
+    shader.add_material(white)
 
     translate = gm.translate(gm.mat4(1.0), gm.vec3(0.5, 0.5, 0.0))
     scale = gm.scale(gm.mat4(1.0), gm.vec3(0.5, -0.5, 1.0))
@@ -70,9 +77,15 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
 
     slide = Texture(device, "slide_texture", "../images/smile_face.jpg")
     slide_sampler = Sampler(device, "slide_sampler", address_mode_u="clamp-to-edge", address_mode_v="clamp-to-edge")
-    slides = TextureSet([slide, slide_sampler])
-    shader.add_texture_set(slides)
-
+    decal_sampler = Sampler(device, "decal_sampler")
+    decal_neutro = Texture(device, "decal_texture", None, texel=(1.0, 1.0, 1.0))
+    decal_relogio = Texture(device, "decal_texture", "../images/stopwatch.jpg")
+    decal_terra = Texture(device, "decal_texture", "../images/earth.jpg")
+    neutro = TextureSet([slide, slide_sampler, decal_neutro, decal_sampler])
+    relogio = TextureSet([slide, slide_sampler, decal_relogio, decal_sampler])
+    terra = TextureSet([slide, slide_sampler, decal_terra, decal_sampler])
+    for ts in (neutro, relogio, terra):
+        shader.add_texture_set(ts)
     cube = Cube(device)
     sphere = Sphere(device)
 
@@ -121,14 +134,14 @@ def initialize(device: wgpu.GPUDevice, target_format: str) -> None:
     trf_sphere_red = sphere_transform(0.9, -0.3, 0.58, table_surface_y)
 
     root = Node(pipeline, nodes=[
-        Node(None, trf_top, [wood, slides], [cube]),
-        Node(None, trf_leg_fl, [wood, slides], [cube]),
-        Node(None, trf_leg_fr, [wood, slides], [cube]),
-        Node(None, trf_leg_bl, [wood, slides], [cube]),
-        Node(None, trf_leg_br, [wood, slides], [cube]),
-        Node(None, trf_box, [orange, slides], [cube]),
-        Node(None, trf_sphere_green, [green, slides], [sphere]),
-        Node(None, trf_sphere_red, [red, slides], [sphere]),
+        Node(None, trf_top, [wood, neutro], [cube]),
+        Node(None, trf_leg_fl, [wood, neutro], [cube]),
+        Node(None, trf_leg_fr, [wood, neutro], [cube]),
+        Node(None, trf_leg_bl, [wood, neutro], [cube]),
+        Node(None, trf_leg_br, [wood, neutro], [cube]),
+        Node(None, trf_box, [orange, relogio], [cube]),
+        Node(None, trf_sphere_green, [white, terra], [sphere]),
+        Node(None, trf_sphere_red, [red, neutro], [sphere]),
     ])
     scene = Scene(root)
 
